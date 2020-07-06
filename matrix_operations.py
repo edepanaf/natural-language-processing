@@ -39,24 +39,21 @@ def count_nonzero_entries_in_matrix_row(matrix, row_index):
     return row.getnnz()
 
 
-def cosine_distance(vector0, vector1, memory=MemoryCosineDistance()):
+def cosine_distance(vector0, vector1, memory=MemoryArgumentsNorm()):
     vector0 = normalize(vector0, memory.argument0)
     vector1 = normalize(vector1, memory.argument1)
-    memory.distance = 1. - scalar_product(vector0, vector1)
-    return memory.distance
+    return 1. - scalar_product(vector0, vector1)
 
 
 def scalar_product(vector0, vector1):
     return np.dot(vector0, vector1)
 
 
-def normalize(vector, memory=MemoryNormalize()):
+def normalize(vector, memory=MemoryNorm()):
     memory.norm = norm_from_vector(vector)
     if memory.norm == 0.:
-        memory.normalized_vector = vector
-    else:
-        memory.normalized_vector = vector / memory.norm
-    return memory.normalized_vector
+        return vector
+    return vector / memory.norm
 
 
 def is_zero_vector(vector):

@@ -9,6 +9,7 @@
 import random
 from matrix_operations import *
 from distance import Distance
+from oracle_claim import OracleClaim
 
 
 DEFAULT_NUMBER_OF_ITERATIONS = 5
@@ -47,27 +48,28 @@ class LearningDistance(Distance):
     def compute_rescaling_vectors(self, enriched_oracle_claim, ratio_item_iterable_learning):
         gradient_item, gradient_iterable = self.compute_item_and_iterable_gradients(enriched_oracle_claim,
                                                                                     ratio_item_iterable_learning)
-        gradient_item = rescale_vector_from_gradient_and_effort(gradient_item, enriched_oracle_claim.effort)
-        gradient_iterable = rescale_vector_from_gradient_and_effort(gradient_iterable, enriched_oracle_claim.effort)
-        return gradient_item, gradient_iterable
+        rescaling_item_vector = rescale_vector_from_gradient_and_effort(gradient_item, enriched_oracle_claim.effort)
+        rescaling_iterable_vector = rescale_vector_from_gradient_and_effort(gradient_iterable,
+                                                                            enriched_oracle_claim.effort)
+        return rescaling_item_vector, rescaling_iterable_vector
 
     def compute_item_and_iterable_gradients(self, enriched_oracle_claim, ratio_item_iterable_learning):
         eoc = enriched_oracle_claim
         r = ratio_item_iterable_learning
-        matrix_of_coefficients = (((1. - eoc.current_distance) * eoc.norm1 / eoc.norm0, -1.),
-                                  (-1., (1. - eoc.current_distance) * eoc.norm0 / eoc.norm1))
-        vector_of_vectorizations = (eoc.vectorization0, eoc.vectorization1)
+        matrix_of_coefficients = (((1. - eoc.current_distance) * eoc.argument1.norm / eoc.argument0.norm, -1.),
+                                  (-1., (1. - eoc.current_distance) * eoc.argument0.norm / eoc.argument1.norm))
+        vector_of_vectorizations = (eoc.argument0.vectorization, eoc.argument1.vectorization)
         gradient_item = non_trivial_hadamard_scalar_product(vector_of_vectorizations,
                                                             matrix_of_coefficients,
                                                             vector_of_vectorizations)
         u0 = dot_matrix_dot_products(self.iterable_weights_vector, transpose_matrix(self.item_iterable_matrix),
-                                     self.item_weights_vector, eoc.vectorization0)
+                                     self.item_weights_vector, eoc.argument0.vectorization)
         u1 = dot_matrix_dot_products(self.iterable_weights_vector, transpose_matrix(self.item_iterable_matrix),
-                                     self.item_weights_vector, eoc.vectorization1)
-        gradient_iterable = non_trivial_hadamard_scalar_product((eoc.iterables_vector0, eoc.iterables_vector1),
+                                     self.item_weights_vector, eoc.argument1.vectorization)
+        gradient_iterable = non_trivial_hadamard_scalar_product((eoc.argument0.vector, eoc.argument1.vector),
                                                                 matrix_of_coefficients,
                                                                 (u0, u1))
-        common_factor = (eoc.norm0 * eoc.norm1 * (eoc.target_distance - eoc.current_distance)
+        common_factor = (eoc.argument0.norm * eoc.argument1.norm * (eoc.target_distance - eoc.current_distance)
                          / (r ** 2 * norm_from_vector(gradient_item) ** 2
                             + (1. - r) ** 2 * norm_from_vector(gradient_iterable) ** 2))
         gradient_item *= common_factor * r
@@ -75,27 +77,19 @@ class LearningDistance(Distance):
         return gradient_item, gradient_iterable
 
 
-class EnrichedOracleClaim:
+class EnrichedOracleClaim(OracleClaim, MemoryArgumentsVectorsVectorizationsNorms):
 
-    def __init__(self, oracle_claim, distance, effort=1.):
+    def __init__(self, oracle_claim, distance_object, effort=1.):
+        OracleClaim.__init__(self, oracle_claim.iterables_pair, oracle_claim.distance_interval)
+        MemoryArgumentsVectorsVectorizationsNorms.__init__(self)
         self.effort = effort
-        self.iterables0, self.iterables1 = oracle_claim.iterables_pair
-        self.distance_interval = oracle_claim.distance_interval
-        memory_distance = MemoryDistance()
-        distance(self.iterables0, self.iterables1, memory_distance)
-        self.current_distance = memory_distance.distance
-        self.iterables_vector0 = memory_distance.argument0.vector
-        self.vectorization0 = memory_distance.argument0.vectorization
-        self.norm0 = memory_distance.argument0.norm
-        self.iterables_vector1 = memory_distance.argument1.vector
-        self.vectorization1 = memory_distance.argument1.vectorization
-        self.norm1 = memory_distance.argument1.norm
+        self.current_distance = distance_object(*self.iterables_pair, memory=self)
         self.target_distance = closest_point_from_interval(self.current_distance, self.distance_interval)
         self.target_distance = (self.current_distance + self.effort * (self.target_distance - self.current_distance))
 
     def has_bad_values(self):
         return (math.isclose(self.current_distance, self.target_distance)
-                or math.isclose(self.norm0, 0) or math.isclose(self.norm1, 0))
+                or math.isclose(self.argument0.norm, 0) or math.isclose(self.argument1.norm, 0))
 
 
 def closest_point_from_interval(value, interval):

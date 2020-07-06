@@ -6,42 +6,30 @@
 # Author: Élie de Panafieu  <elie.de_panafieu@nokia-bell-labs.com>
 
 
-from oracle_claim import OracleClaim
-
-
-class MemoryNormalize:
+class MemoryNorm:
     def __init__(self):
-        self.normalized_vector = None
         self.norm = None
 
 
-class MemoryCosineDistance:
+class MemoryArgumentsNorm:
     def __init__(self):
-        self.distance = None
-        self.argument0 = MemoryNormalize()
-        self.argument1 = MemoryNormalize()
+        self.argument0 = MemoryNorm()
+        self.argument1 = MemoryNorm()
 
 
-class MemoryVectorize:
+class MemoryVector:
     def __init__(self):
-        self.iterables = None
         self.vector = None
-        self.vectorization = None
-        self.norm = None
 
 
-class MemoryDistance:
+class MemoryVectorVectorizationNorm(MemoryVector, MemoryNorm):
     def __init__(self):
-        self.argument0 = MemoryVectorize()
-        self.argument1 = MemoryVectorize()
-        self.distance = None
-
-    def save_cosine_distance(self, memory_cosine_distance):
-        self.argument0.norm = memory_cosine_distance.argument0.norm
-        self.argument1.norm = memory_cosine_distance.argument1.norm
+        MemoryVector.__init__(self)
+        MemoryNorm.__init__(self)
 
 
-class MemoryOracleClaim(MemoryDistance, OracleClaim):
-    def __init__(self, oracle_claim):
-        MemoryDistance.__init__(self)
-        OracleClaim.__init__(self, oracle_claim.iterables_pair, oracle_claim.distance_interval)
+class MemoryArgumentsVectorsVectorizationsNorms (MemoryArgumentsNorm):
+    def __init__(self):
+        super().__init__()
+        self.argument0 = MemoryVectorVectorizationNorm()
+        self.argument1 = MemoryVectorVectorizationNorm()

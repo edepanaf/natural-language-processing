@@ -25,20 +25,15 @@ class Distance(VectorSpace):
             iterable_to_weight = {iterable: 1 / len(iterable) for iterable in self.iterable_to_index}
         self.set_iterable_weights(iterable_to_weight)
 
-    def __call__(self, iterables0, iterables1, memory=MemoryDistance()):
-        vectorization0 = self.vectorize(iterables0, memory=memory.argument0)
-        vectorization1 = self.vectorize(iterables1, memory=memory.argument1)
-        memory_cosine_distance = MemoryCosineDistance()
-        memory.distance = cosine_distance(vectorization0, vectorization1, memory=memory_cosine_distance)
-        memory.save_cosine_distance(memory_cosine_distance)
-        return memory.distance
+    def __call__(self, iterables0, iterables1, memory=MemoryArgumentsVectorsVectorizationsNorms()):
+        memory.argument0.vectorization = self.vectorize(iterables0, memory=memory.argument0)
+        memory.argument1.vectorization = self.vectorize(iterables1, memory=memory.argument1)
+        return cosine_distance(memory.argument0.vectorization, memory.argument1.vectorization, memory=memory)
 
-    def vectorize(self, iterables, memory=MemoryVectorize()):
-        memory.iterables = iterables
+    def vectorize(self, iterables, memory=MemoryVector()):
         memory.vector = self.iterable_vector_from_collection(iterables)
-        memory.vectorization = dot_matrix_dot_products(self.item_weights_vector, self.item_iterable_matrix,
-                                                       self.iterable_weights_vector, memory.vector)
-        return memory.vectorization
+        return dot_matrix_dot_products(self.item_weights_vector, self.item_iterable_matrix,
+                                       self.iterable_weights_vector, memory.vector)
 
     def set_item_weights(self, item_to_weight):
         item_to_weight = normalize_distribution(item_to_weight)
