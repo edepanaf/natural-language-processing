@@ -25,13 +25,20 @@ class Distance(VectorSpace):
             iterable_to_weight = {iterable: 1 / len(iterable) for iterable in self.iterable_to_index}
         self.set_iterable_weights(iterable_to_weight)
 
-    def __call__(self, iterables0, iterables1):
-        distance, _, _, _, _, _, _ = self.verbose_distance(iterables0, iterables1)
-        return distance
+    def __call__(self, iterables0, iterables1, memory=MemoryDistance()):
+        vectorization0 = self.vectorize(iterables0, memory=memory.argument0)
+        vectorization1 = self.vectorize(iterables1, memory=memory.argument1)
+        memory_cosine_distance = MemoryCosineDistance()
+        memory.distance = cosine_distance(vectorization0, vectorization1, memory=memory_cosine_distance)
+        memory.save_cosine_distance(memory_cosine_distance)
+        return memory.distance
 
-    def vectorize(self, iterables):
-        vectorization, _ = self.verbose_vectorize(iterables)
-        return vectorization
+    def vectorize(self, iterables, memory=MemoryVectorize()):
+        memory.iterables = iterables
+        memory.vector = self.iterable_vector_from_collection(iterables)
+        memory.vectorization = dot_matrix_dot_products(self.item_weights_vector, self.item_iterable_matrix,
+                                                       self.iterable_weights_vector, memory.vector)
+        return memory.vectorization
 
     def set_item_weights(self, item_to_weight):
         item_to_weight = normalize_distribution(item_to_weight)
@@ -53,18 +60,6 @@ class Distance(VectorSpace):
         # where the only iterable containing an item has been removed (operation currently not supported).
         return {item: log_of_ratio_zero_if_null_denominator(iterable_number, self.count_iterables_containing_item(item))
                 for item in self.item_to_index}
-
-    def verbose_distance(self, iterables0, iterables1):
-        vectorization0, iterables_vector0 = self.verbose_vectorize(iterables0)
-        vectorization1, iterables_vector1 = self.verbose_vectorize(iterables1)
-        distance, norm0, norm1 = verbose_cosine_distance(vectorization0, vectorization1)
-        return distance, iterables_vector0, vectorization0, norm0, iterables_vector1, vectorization1, norm1
-
-    def verbose_vectorize(self, iterables):
-        iterables_vector = self.iterable_vector_from_collection(iterables)
-        vectorization = dot_matrix_dot_products(self.item_weights_vector, self.item_iterable_matrix,
-                                                self.iterable_weights_vector, iterables_vector)
-        return vectorization, iterables_vector
 
 
 def log_of_ratio_zero_if_null_denominator(numerator, denominator):

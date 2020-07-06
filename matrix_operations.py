@@ -10,6 +10,7 @@ import math
 import numpy as np
 from scipy.sparse.csr import csr_matrix
 from scipy.sparse import lil_matrix
+from memory import *
 
 
 def matrix_from_iterables_and_index_maps(iterables, item_to_index: dict, iterable_to_index: dict) -> csr_matrix:
@@ -38,38 +39,31 @@ def count_nonzero_entries_in_matrix_row(matrix, row_index):
     return row.getnnz()
 
 
-def cosine_distance(vector0, vector1):
-    distance, _, _ = verbose_cosine_distance(vector0, vector1)
-    return distance
-
-
-def verbose_cosine_distance(vector0, vector1):
-    normalized_vector0, norm0 = verbose_normalize(vector0)
-    normalized_vector1, norm1 = verbose_normalize(vector1)
-    return 1. - scalar_product(normalized_vector0, normalized_vector1), norm0, norm1
+def cosine_distance(vector0, vector1, memory=MemoryCosineDistance()):
+    vector0 = normalize(vector0, memory.argument0)
+    vector1 = normalize(vector1, memory.argument1)
+    memory.distance = 1. - scalar_product(vector0, vector1)
+    return memory.distance
 
 
 def scalar_product(vector0, vector1):
     return np.dot(vector0, vector1)
 
 
-def normalize(vector):
-    normalized_vector, _ = verbose_normalize(vector)
-    return normalized_vector
-
-
-def verbose_normalize(vector):
-    if is_zero_vector(vector):
-        return vector, 0
-    vector_norm = norm(vector)
-    return vector / vector_norm, vector_norm
+def normalize(vector, memory=MemoryNormalize()):
+    memory.norm = norm_from_vector(vector)
+    if memory.norm == 0.:
+        memory.normalized_vector = vector
+    else:
+        memory.normalized_vector = vector / memory.norm
+    return memory.normalized_vector
 
 
 def is_zero_vector(vector):
     return not np.any(vector)
 
 
-def norm(vector):
+def norm_from_vector(vector):
     return math.sqrt(scalar_product(vector, vector))
 
 

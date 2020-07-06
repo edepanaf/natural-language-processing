@@ -34,7 +34,7 @@ class MyTestCase(unittest.TestCase):
         expected_item_weights_vector /= sum(expected_item_weights_vector)
         self.assertTrue(are_equal_vectors(tfidf_distance.item_weights_vector, expected_item_weights_vector))
 
-    def test_verbose_distance(self):
+    """def test_verbose_distance(self):
         d, iv0, vz0, n0, iv1, vz1, n1 = distance.verbose_distance(iterables0, iterables1)
         self.assertAlmostEqual(d, 1. - scalar_product(vz0, vz1) / n0 / n1)
         self.assertTrue(are_equal_vectors(dot_matrix_dot_products(distance.item_weights_vector,
@@ -44,7 +44,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(are_equal_vectors(dot_matrix_dot_products(distance.item_weights_vector,
                                                                   distance.item_iterable_matrix,
                                                                   distance.iterable_weights_vector, iv1),
-                                          vz1))
+                                          vz1))"""
 
 
 if __name__ == '__main__':

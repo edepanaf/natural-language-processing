@@ -48,7 +48,7 @@ class TestMatrixOperations(unittest.TestCase):
         v = create_vector([2., -1., 0.5])
         zero_vector = create_vector([0., 0., 0.])
         self.assertAlmostEqual(cosine_distance(zero_vector, u), 1.)
-        self.assertAlmostEqual(cosine_distance(u, v), 1. - scalar_product(u, v) / norm(u) / norm(v))
+        self.assertAlmostEqual(cosine_distance(u, v), 1. - scalar_product(u, v) / norm_from_vector(u) / norm_from_vector(v))
 
     def test_scale_vector_to_satisfy_lower_bound(self):
         vector = create_vector([6, 2, 4, 8])

@@ -68,7 +68,8 @@ class LearningDistance(Distance):
                                                                 matrix_of_coefficients,
                                                                 (u0, u1))
         common_factor = (eoc.norm0 * eoc.norm1 * (eoc.target_distance - eoc.current_distance)
-                         / (r ** 2 * norm(gradient_item) ** 2 + (1. - r) ** 2 * norm(gradient_iterable) ** 2))
+                         / (r ** 2 * norm_from_vector(gradient_item) ** 2
+                            + (1. - r) ** 2 * norm_from_vector(gradient_iterable) ** 2))
         gradient_item *= common_factor * r
         gradient_iterable *= common_factor * (1. - r)
         return gradient_item, gradient_iterable
@@ -80,9 +81,15 @@ class EnrichedOracleClaim:
         self.effort = effort
         self.iterables0, self.iterables1 = oracle_claim.iterables_pair
         self.distance_interval = oracle_claim.distance_interval
-        self.current_distance, self.iterables_vector0, self.vectorization0, self.norm0,\
-            self.iterables_vector1, self.vectorization1, self.norm1 = \
-            distance.verbose_distance(self.iterables0, self.iterables1)
+        memory_distance = MemoryDistance()
+        distance(self.iterables0, self.iterables1, memory_distance)
+        self.current_distance = memory_distance.distance
+        self.iterables_vector0 = memory_distance.argument0.vector
+        self.vectorization0 = memory_distance.argument0.vectorization
+        self.norm0 = memory_distance.argument0.norm
+        self.iterables_vector1 = memory_distance.argument1.vector
+        self.vectorization1 = memory_distance.argument1.vectorization
+        self.norm1 = memory_distance.argument1.norm
         self.target_distance = closest_point_from_interval(self.current_distance, self.distance_interval)
         self.target_distance = (self.current_distance + self.effort * (self.target_distance - self.current_distance))
 
