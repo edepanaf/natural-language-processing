@@ -73,6 +73,14 @@ learning_distance = LearningDistance(all_bags, item_to_weight=item_weights, bag_
 
 # If the 'item_weights' and / or 'bag_weights' are omitted,
 # default weights will be computed using the tf-idf heuristic.
+# We can access the weights in the following way.
+
+learning_distance.get_item_weights()
+# {'a': 0.2857142857142857, 'b': 0.5714285714285714, 'c': 0.14285714285714285}
+
+# The weights are different from the ones we entered!
+# Indeed, they are normalized to sum to '1.',
+# since the distance is invariant by scalar multiplication of the weights.
 
 # The LearningDistance object is callable and returns
 # the distance between its arguments.
@@ -105,14 +113,9 @@ learning_distance({bag0, bag1}, {bag1, bag3})
 # The item and bag weights can be accessed either as dictionary
 
 learning_distance.get_item_weights()
-# {'a': 0.7187108156315916, 'b': 2.22528447611958, 'c': 0.5843234731543091} <----------------------------- OLD ONE
 # {'a': 0.1958114148377036, 'b': 0.6281455477367703, 'c': 0.1800337915490111}
 
 learning_distance.get_bag_weights()
-""" {('a', 'b', 'a', 'a'): 4.5, <------------------------------------------------------------------------- OLD ONE
-    ('a', 'a', 'a', 'b'): 0.9403565677689033,
-    ('a', 'b', 'b', 'a'): 3.0,
-    ('a', 'c'): 2.6491085805777415}"""
 """{('a', 'b', 'a', 'a'): 0.4090909090909091,
  ('a', 'a', 'a', 'b'): 0.09090909090909091,
  ('a', 'b', 'b', 'a'): 0.2727272727272727,
@@ -121,11 +124,9 @@ learning_distance.get_bag_weights()
 # or as vectors, using directly the attributes
 
 learning_distance.item_weights_vector
-# array([0.71871082, 2.22528448, 0.58432347]) <----------------------------------------------------------- OLD ONE
 # array([0.19581141, 0.62814555, 0.18003379])
 
 learning_distance.bag_weights_vector
-# array([4.5, 0.94035657, 3., 2.64910858]) <-------------------------------------------------------------- OLD ONE
 # array([0.40909091, 0.09090909, 0.27272727, 0.22727273])
 
 # This second option is faster, but we do not know to which item (or bag)
@@ -155,41 +156,41 @@ Only this file needs changing if another implementation is chosen in the future.
 
 --- vector_space.py ---
 
-Define the class 'VectorSpace', initialized using a collection of iterables,
-and transforming item or iterable collections into vectors.
+Define the class 'VectorSpace', initialized using a collection of bags,
+and transforming item or bag collections into vectors.
 Provide the methods
-    __init__(iterables)
+    __init__(bags)
     item_vector_from_dict(self, item_distribution)
-    bag_vector_from_dict(self, iterable_distribution)
+    bag_vector_from_dict(self, bag_distribution)
     item_dict_from_vector(self, item_vector)
-    bag_dict_from_vector(self, iterable_vector)
-    bag_vector_from_collection(self, iterable_collection)
+    bag_dict_from_vector(self, bag_vector)
+    bag_vector_from_collection(self, bags)
     count_bags_containing_item(self, item)
 
 
 --- distance.py ---
 
 Define the class 'Distance'. Objects of this class are callable.
-They input pairs of collections of iterables and output their distance.
+They input pairs of collections of bags and output their distance.
 Provide the methods
-    __init__(self, iterables, item_to_weight=None, iterable_to_weight=None)
-    def __call__(self, iterables0, iterables1)
-    vectorize(self, iterables)
+    __init__(self, bags, item_to_weight=None, bag_to_weight=None)
+    def __call__(self, bags0, bags1)
+    vectorize(self, bags)
     set_item_weights(self, item_to_weight)
-    set_bag_weights(self, iterable_to_weight)
+    set_bag_weights(self, bag_to_weight)
     get_item_weights(self)
     get_bag_weights(self)
     tfidf_item_weights(self)
-    verbose_distance(self, iterables0, iterables1)
-    verbose_vectorize(self, iterables)
+    verbose_distance(self, bags0, bags1)
+    verbose_vectorize(self, bags)
 
 
 --- oracle_claim.py ---
 
 Define the class 'OracleClaim', which is used to provide
-bounds on the distance between two collections of iterables.
+bounds on the distance between two collections of bags.
 Provide the method
-    __init__(self, iterables_pair, distance_interval)
+    __init__(self, pair_of_bag_collections, distance_interval)
 
 
 --- learning_distance.py ---
@@ -197,15 +198,21 @@ Provide the method
 Define the class 'LearningDistance', which inherits from 'Distance'.
 Add the functionality to learn from 'OracleClaim' objects.
 Provide the methods
-    __init__(self, iterables, item_to_weight=None, iterable_to_weight=None)
-    learn(self, oracle_claims, ratio_item_iterable_learning=0.5, convergence_speed=0.5,
+    __init__(self, bags, item_to_weight=None, bag_to_weight=None)
+    learn(self, oracle_claims, ratio_item_bag_learning=0.5, convergence_speed=0.5,
           number_of_iterations=DEFAULT_NUMBER_OF_ITERATIONS)
-    learning_loop_on_oracle_claims(self, oracle_claims, ratio_item_iterable_learning=0.5, effort=1.)
-    learn_from_one_oracle_claim(self, oracle_claim, ratio_item_iterable_learning=0.5, effort=1.)
-    compute_rescaling_vectors(self, enriched_oracle_claim, ratio_item_iterable_learning)
+    learning_loop_on_oracle_claims(self, oracle_claims, ratio_item_bag_learning=0.5, effort=1.)
+    learn_from_one_oracle_claim(self, oracle_claim, ratio_item_bag_learning=0.5, effort=1.)
+    compute_rescaling_vectors(self, enriched_oracle_claim, ratio_item_bag_learning)
 
 Also define the class 'EnrichedOracleClaim', used to avoid
 duplicate computations during the treatment of an oracle claim.
+
+
+--- memory.py ---
+
+Define various classes to store intermediate computations
+as side effect of calling some of the costly functions.
 
 
 --- tests ---
