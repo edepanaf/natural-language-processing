@@ -7,9 +7,11 @@
 # Author: Élie de Panafieu  <elie.de_panafieu@nokia-bell-labs.com>
 
 
+
 ============ Summary ============
 
-This Python package provides a distance on collections of iterables
+
+This Python package provides a distance on collections of bags of items
 that is able to evolve when true distance instances are provided.
 Its main application is expected to be on Natural Language Processing.
 It unifies the 'bag of words' and 'bag of factors' approaches.
@@ -18,116 +20,127 @@ or into a the collection of its factors (bounding the length of those factors
 is then recommended).
 
 The LearningDistance object is initialized by providing
-the collection of all iterables considered.
-The distance itself is computed using weights on the items and iterables
-(a large weight corresponding to an important item or iterable).
+the collection of all bags considered.
+Those bags must be hashable iterables.
+The distance itself is computed using weights on the items and bags
+(a large weight corresponding to an important item or bag).
 Those weights can be provided by the user.
 Otherwise, they are computed following the tf-idf heuristic.
 
 The LearningDistance object is also able to learn.
-Let us define an 'oracle claim' as a pair of collections of iterables
+Let us define an 'oracle claim' as a pair of collections of bags
 and an interval for the true distance between them.
 The LearningDistance object can use a collection of oracle claims
-to change the item and iterable weights so that
+to change the item and bag weights so that
 the distance conforms better with the oracle claims.
 
-The distance between two collections of iterables is defined as
+The distance between two collections of bags is defined as
 the cosine distance between their vectorizations.
-The vectorization of a collection of iterables is a vector on the space
-of all items, which coefficients depends on the item and iterable weights,
+The vectorization of a collection of bags is a vector on the space
+of all items, which coefficients depends on the item and bag weights,
 following the classic 'bag of words' and 'tf-idf' approaches.
 
 All the computations rely on sparse matrix manipulations, implemented by scipy.
 
 
+
 ============ Tutorial ============
+
 
 # Import the main class.
 
 from learning_distance import LearningDistance
 
-# Define the iterables we are working on. They must be hashable.
+# Define the bags we are working on. They must be hashable.
 
-iterable0 = ('a', 'b', 'a', 'a')
-iterable1 = ('a', 'a', 'a', 'b')
-iterable2 = ('a', 'b', 'b', 'a')
-iterable3 = ('a', 'c')
-all_iterables = [iterable0, iterable1, iterable2, iterable3]
+bag0 = ('a', 'b', 'a', 'a')
+bag1 = ('a', 'a', 'a', 'b')
+bag2 = ('a', 'b', 'b', 'a')
+bag3 = ('a', 'c')
+all_bags = [bag0, bag1, bag2, bag3]
 
 # The order of the items does not impact the distance computation,
 # but their multiplicity does.
 
-# Define weights on the items and iterables.
+# Define weights on the items and bags.
 
 item_weights = {'a': 1., 'b': 2., 'c': 0.5}
-iterable_weights = {iterable0: 4.5, iterable1: 1., iterable2: 3., iterable3: 2.5}
+bag_weights = {bag0: 4.5, bag1: 1., bag2: 3., bag3: 2.5}
 
 # Define the LearningDistance object.
 
-learning_distance = LearningDistance(all_iterables, item_to_weight=item_weights, iterable_to_weight=iterable_weights)
+learning_distance = LearningDistance(all_bags, item_to_weight=item_weights, bag_to_weight=bag_weights)
 
-# If the 'item_weights' and / or 'iterable_weights' are omitted,
+# If the 'item_weights' and / or 'bag_weights' are omitted,
 # default weights will be computed using the tf-idf heuristic.
 
 # The LearningDistance object is callable and returns
 # the distance between its arguments.
-# Recall that those arguments are collections of iterables,
-# and not iterables alone.
+# Recall that those arguments are collections of bags,
+# and not bags alone.
 
-learning_distance({iterable0, iterable1}, {iterable1, iterable3})
+learning_distance({bag0, bag1}, {bag1, bag3})
 # 0.04990974137709514
 
 # Maybe we find this distance too low and expected a value
 # between 0.1 and 0.2 instead. To express it, we make the following oracle claim.
 
 from oracle_claim import OracleClaim
-oracle_claim = OracleClaim(({iterable0, iterable1}, {iterable1, iterable3}), (0.1, 0.2))
+oracle_claim = OracleClaim(({bag0, bag1}, {bag1, bag3}), (0.1, 0.2))
 
 # We can now let learning_distance learn from this claim
-# and adjust its weights on items and iterables.
+# and adjust its weights on items and bags.
 # Let us say that we want the changes to be mainly on the item weights,
 # then we write
 
 set_of_claims = {oracle_claim}
-learning_distance.learn(set_of_claims, ratio_item_iterable_learning=1.)
+learning_distance.learn(set_of_claims, ratio_item_bag_learning=1.)
 
 # The collection of claims can be a set or a list.
 # We can now check that the distance has changed.
 
-learning_distance({iterable0, iterable1}, {iterable1, iterable3})
-# 0.10104605065402616
+learning_distance({bag0, bag1}, {bag1, bag3})
+# 0.0989203613583286
 
-# The item and iterable weights can be accessed either as dictionary
+# The item and bag weights can be accessed either as dictionary
 
 learning_distance.get_item_weights()
-# {'a': 0.7187108156315916, 'b': 2.22528447611958, 'c': 0.5843234731543091}
+# {'a': 0.7187108156315916, 'b': 2.22528447611958, 'c': 0.5843234731543091} <----------------------------- OLD ONE
+# {'a': 0.1958114148377036, 'b': 0.6281455477367703, 'c': 0.1800337915490111}
 
-learning_distance.get_iterable_weights()
-"""{('a', 'b', 'a', 'a'): 4.5,
+learning_distance.get_bag_weights()
+""" {('a', 'b', 'a', 'a'): 4.5, <------------------------------------------------------------------------- OLD ONE
     ('a', 'a', 'a', 'b'): 0.9403565677689033,
     ('a', 'b', 'b', 'a'): 3.0,
     ('a', 'c'): 2.6491085805777415}"""
+"""{('a', 'b', 'a', 'a'): 0.4090909090909091,
+ ('a', 'a', 'a', 'b'): 0.09090909090909091,
+ ('a', 'b', 'b', 'a'): 0.2727272727272727,
+ ('a', 'c'): 0.22727272727272727}"""
 
-or as vectors, using directly the attributes
+# or as vectors, using directly the attributes
 
 learning_distance.item_weights_vector
-# array([0.71871082, 2.22528448, 0.58432347])
+# array([0.71871082, 2.22528448, 0.58432347]) <----------------------------------------------------------- OLD ONE
+# array([0.19581141, 0.62814555, 0.18003379])
 
-learning_distance.iterable_weights_vector
-# array([4.5, 0.94035657, 3., 2.64910858])
+learning_distance.bag_weights_vector
+# array([4.5, 0.94035657, 3., 2.64910858]) <-------------------------------------------------------------- OLD ONE
+# array([0.40909091, 0.09090909, 0.27272727, 0.22727273])
 
-# This second option is faster, but we do not know to which item (or iterable)
+# This second option is faster, but we do not know to which item (or bag)
 # correspond the indices of the vectors.
 # Those indices can be obtained using the dictionaries
 
 learning_distance.item_to_index
 # {'a': 0, 'b': 1, 'c': 2}
 
-learning_distance.iterable_to_index
+learning_distance.bag_to_index
 """{('a', 'b', 'a', 'a'): 0,
     ('a', 'a', 'a', 'b'): 1,
     ('a', 'b', 'b', 'a'): 2,
     ('a', 'c'): 3}"""
+
 
 
 ============ Structure ============
@@ -147,11 +160,11 @@ and transforming item or iterable collections into vectors.
 Provide the methods
     __init__(iterables)
     item_vector_from_dict(self, item_distribution)
-    iterable_vector_from_dict(self, iterable_distribution)
+    bag_vector_from_dict(self, iterable_distribution)
     item_dict_from_vector(self, item_vector)
-    iterable_dict_from_vector(self, iterable_vector)
-    iterable_vector_from_collection(self, iterable_collection)
-    count_iterables_containing_item(self, item)
+    bag_dict_from_vector(self, iterable_vector)
+    bag_vector_from_collection(self, iterable_collection)
+    count_bags_containing_item(self, item)
 
 
 --- distance.py ---
@@ -163,9 +176,9 @@ Provide the methods
     def __call__(self, iterables0, iterables1)
     vectorize(self, iterables)
     set_item_weights(self, item_to_weight)
-    set_iterable_weights(self, iterable_to_weight)
+    set_bag_weights(self, iterable_to_weight)
     get_item_weights(self)
-    get_iterable_weights(self)
+    get_bag_weights(self)
     tfidf_item_weights(self)
     verbose_distance(self, iterables0, iterables1)
     verbose_vectorize(self, iterables)

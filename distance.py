@@ -12,48 +12,48 @@ from vector_space import VectorSpace
 
 class Distance(VectorSpace):
 
-    def __init__(self, iterables, item_to_weight=None, iterable_to_weight=None):
-        super().__init__(iterables)
+    def __init__(self, bags, item_to_weight=None, bag_to_weight=None):
+        super().__init__(bags)
         #
         self.item_weights_vector = None
         if item_to_weight is None:
             item_to_weight = self.tfidf_item_weights()
         self.set_item_weights(item_to_weight)
         #
-        self.iterable_weights_vector = None
-        if iterable_to_weight is None:
-            iterable_to_weight = {iterable: 1 / len(iterable) for iterable in self.iterable_to_index}
-        self.set_iterable_weights(iterable_to_weight)
+        self.bag_weights_vector = None
+        if bag_to_weight is None:
+            bag_to_weight = {bag: 1 / len(bag) for bag in self.bag_to_index}
+        self.set_bag_weights(bag_to_weight)
 
-    def __call__(self, iterables0, iterables1, memory=MemoryArgumentsVectorsVectorizationsNorms()):
-        memory.argument0.vectorization = self.vectorize(iterables0, memory=memory.argument0)
-        memory.argument1.vectorization = self.vectorize(iterables1, memory=memory.argument1)
+    def __call__(self, bags0, bags1, memory=MemoryArgumentsVectorsVectorizationsNorms()):
+        memory.argument0.vectorization = self.vectorize(bags0, memory=memory.argument0)
+        memory.argument1.vectorization = self.vectorize(bags1, memory=memory.argument1)
         return cosine_distance(memory.argument0.vectorization, memory.argument1.vectorization, memory=memory)
 
-    def vectorize(self, iterables, memory=MemoryVector()):
-        memory.vector = self.iterable_vector_from_collection(iterables)
-        return dot_matrix_dot_products(self.item_weights_vector, self.item_iterable_matrix,
-                                       self.iterable_weights_vector, memory.vector)
+    def vectorize(self, bags, memory=MemoryVector()):
+        memory.vector = self.bag_vector_from_collection(bags)
+        return dot_matrix_dot_products(self.item_weights_vector, self.item_bag_matrix,
+                                       self.bag_weights_vector, memory.vector)
 
     def set_item_weights(self, item_to_weight):
         item_to_weight = normalize_distribution(item_to_weight)
         self.item_weights_vector = self.item_vector_from_dict(item_to_weight)
 
-    def set_iterable_weights(self, iterable_to_weight):
-        iterable_to_weight = normalize_distribution(iterable_to_weight)
-        self.iterable_weights_vector = self.iterable_vector_from_dict(iterable_to_weight)
+    def set_bag_weights(self, bag_to_weight):
+        bag_to_weight = normalize_distribution(bag_to_weight)
+        self.bag_weights_vector = self.bag_vector_from_dict(bag_to_weight)
 
     def get_item_weights(self):
         return self.item_dict_from_vector(self.item_weights_vector)
 
-    def get_iterable_weights(self):
-        return self.iterable_dict_from_vector(self.iterable_weights_vector)
+    def get_bag_weights(self):
+        return self.bag_dict_from_vector(self.bag_weights_vector)
 
     def tfidf_item_weights(self):
-        iterable_number = len(self.iterable_to_index)
+        number_of_bags = len(self.bag_to_index)
         # We use log_of_ratio_zero_if_null_denominator to handle the case
-        # where the only iterable containing an item has been removed (operation currently not supported).
-        return {item: log_of_ratio_zero_if_null_denominator(iterable_number, self.count_iterables_containing_item(item))
+        # where the only bag containing an item has been removed (operation currently not supported).
+        return {item: log_of_ratio_zero_if_null_denominator(number_of_bags, self.count_bags_containing_item(item))
                 for item in self.item_to_index}
 
 

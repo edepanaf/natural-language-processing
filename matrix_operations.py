@@ -13,11 +13,11 @@ from scipy.sparse import lil_matrix
 from memory import *
 
 
-def matrix_from_iterables_and_index_maps(iterables, item_to_index: dict, iterable_to_index: dict) -> csr_matrix:
-    matrix = lil_matrix((len(item_to_index), len(iterable_to_index)), dtype='int')
-    for iterable in iterables:
-        for item in iterable:
-            matrix[item_to_index[item], iterable_to_index[iterable]] += 1
+def matrix_from_bags_and_index_maps(bags, item_to_index: dict, bag_to_index: dict) -> csr_matrix:
+    matrix = lil_matrix((len(item_to_index), len(bag_to_index)), dtype='int')
+    for bag in bags:
+        for item in bag:
+            matrix[item_to_index[item], bag_to_index[bag]] += 1
     return matrix.tocsr()
 
 

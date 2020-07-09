@@ -33,11 +33,11 @@ class TestLearningDistance(unittest.TestCase):
         interval_true_distance = (0.1, 0.2)
         oracle_claim = OracleClaim(({iterable0, iterable1}, {iterable1, iterable3}), interval_true_distance)
         learning_distance = LearningDistance(all_iterables, item_to_weight=item_weights,
-                                             iterable_to_weight=iterable_weights)
+                                             bag_to_weight=iterable_weights)
         # old_distance = learning_distance(oracle_claim.iterables_pair[0], oracle_claim.iterables_pair[1])
-        learning_distance.learn({oracle_claim}, ratio_item_iterable_learning=1., number_of_iterations=5,
+        learning_distance.learn({oracle_claim}, ratio_item_bag_learning=1., number_of_iterations=5,
                                 convergence_speed=0.5)
-        new_distance = learning_distance(oracle_claim.iterables_pair[0], oracle_claim.iterables_pair[1])
+        new_distance = learning_distance(oracle_claim.pair_of_bag_collections[0], oracle_claim.pair_of_bag_collections[1])
         self.assertTrue(abs(new_distance - 0.1) < abs(new_distance - 0.2))
 
     def test_learn(self):

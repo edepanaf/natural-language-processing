@@ -19,7 +19,7 @@ matrix = csr_matrix([[1, 0, 1], [3, 3, 1], [2, 2, 0], [0, 1, 1], [0, 0, 1]])
 class TestMatrixOperations(unittest.TestCase):
 
     def test_matrix_from_iterables_and_index_maps(self):
-        computed = matrix_from_iterables_and_index_maps(iterables, item_to_index, iterable_to_index)
+        computed = matrix_from_bags_and_index_maps(iterables, item_to_index, iterable_to_index)
         expected = matrix
         row_number, column_number = computed.get_shape()
         self.assertEqual((row_number, column_number), (5, 3), 'wrong shape')

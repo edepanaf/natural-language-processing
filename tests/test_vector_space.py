@@ -25,7 +25,7 @@ class TestVectorSpace(unittest.TestCase):
 
     def test_map_to_index_from_iterable(self):
         iterable = 'abacbde'
-        computed = map_to_index_from_iterable(iterable)
+        computed = map_to_index_from_bag(iterable)
         computed_list = ['' for _ in range(len(iterable))]
         for item, index in computed.items():
             computed_list[index] = item
@@ -41,15 +41,15 @@ class TestVectorSpace(unittest.TestCase):
         self.assertEqual(computed_string, 'abcdef')
 
     def test_count_iterables_containing_item(self):
-        self.assertEqual(vector_space.count_iterables_containing_item('a'), 3)
-        self.assertEqual(vector_space.count_iterables_containing_item('b'), 2)
-        self.assertEqual(vector_space.count_iterables_containing_item('n'), 2)
-        self.assertEqual(vector_space.count_iterables_containing_item('e'), 1)
-        self.assertEqual(vector_space.count_iterables_containing_item('f'), 0)
+        self.assertEqual(vector_space.count_bags_containing_item('a'), 3)
+        self.assertEqual(vector_space.count_bags_containing_item('b'), 2)
+        self.assertEqual(vector_space.count_bags_containing_item('n'), 2)
+        self.assertEqual(vector_space.count_bags_containing_item('e'), 1)
+        self.assertEqual(vector_space.count_bags_containing_item('f'), 0)
 
     def test_vector_length(self):
-        vector = vector_space.iterable_vector_from_collection(['ananas', 'banana'])
-        projection = matrix_vector_product(vector_space.item_iterable_matrix, vector)
+        vector = vector_space.bag_vector_from_collection(['ananas', 'banana'])
+        projection = matrix_vector_product(vector_space.item_bag_matrix, vector)
         self.assertEqual(len(projection), len(vector_space.item_to_index))
 
 

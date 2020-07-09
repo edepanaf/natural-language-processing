@@ -17,73 +17,73 @@ DEFAULT_NUMBER_OF_ITERATIONS = 5
 
 class LearningDistance(Distance):
 
-    def __init__(self, iterables, item_to_weight=None, iterable_to_weight=None):
-        super().__init__(iterables, item_to_weight, iterable_to_weight)
+    def __init__(self, bags, item_to_weight=None, bag_to_weight=None):
+        super().__init__(bags, item_to_weight, bag_to_weight)
 
-    def learn(self, oracle_claims, ratio_item_iterable_learning=0.5, convergence_speed=0.5,
+    def learn(self, oracle_claims, ratio_item_bag_learning=0.5, convergence_speed=0.5,
               number_of_iterations=DEFAULT_NUMBER_OF_ITERATIONS):
         oracle_claims = list(oracle_claims)
         for _ in range(number_of_iterations):
             random.shuffle(oracle_claims)
             for oracle_claim in oracle_claims:
                 self.learn_from_one_oracle_claim(oracle_claim,
-                                                 ratio_item_iterable_learning=ratio_item_iterable_learning,
+                                                 ratio_item_bag_learning=ratio_item_bag_learning,
                                                  effort=convergence_speed)
 
-    def learn_from_one_oracle_claim(self, oracle_claim, ratio_item_iterable_learning=0.5, effort=1.):
+    def learn_from_one_oracle_claim(self, oracle_claim, ratio_item_bag_learning=0.5, effort=1.):
         """ 'effort' is a value between '0.' and '1.'. It represents the amplitude of the change applied to the weights
         so that the distance conforms to 'oracle_claim'.
-        Let 't' denote the target distance between the two sets of iterables from oracle_claim,
+        Let 't' denote the target distance between the two sets of bags from oracle_claim,
         'c' their current distance, and 'd' the distance achieved after the update.
         Then 'effort' is around '(t - d) / (t - c)'. """
         enriched_oracle_claim = EnrichedOracleClaim(oracle_claim, self, effort=effort)
         if enriched_oracle_claim.has_bad_values():
             return None
-        rescaling_item_vector, rescaling_iterable_vector = self.compute_rescaling_vectors(enriched_oracle_claim,
-                                                                                          ratio_item_iterable_learning)
+        rescaling_item_vector, rescaling_bag_vector =\
+            self.compute_rescaling_vectors(enriched_oracle_claim, ratio_item_bag_learning)
         self.item_weights_vector = coefficient_wise_vector_product(rescaling_item_vector, self.item_weights_vector)
-        self.iterable_weights_vector = coefficient_wise_vector_product(rescaling_iterable_vector,
-                                                                       self.iterable_weights_vector)
+        self.bag_weights_vector = coefficient_wise_vector_product(rescaling_bag_vector,
+                                                                  self.bag_weights_vector)
 
-    def compute_rescaling_vectors(self, enriched_oracle_claim, ratio_item_iterable_learning):
-        gradient_item, gradient_iterable = self.compute_item_and_iterable_gradients(enriched_oracle_claim,
-                                                                                    ratio_item_iterable_learning)
+    def compute_rescaling_vectors(self, enriched_oracle_claim, ratio_item_bag_learning):
+        gradient_item, gradient_bag = self.compute_item_and_bag_gradients(enriched_oracle_claim,
+                                                                          ratio_item_bag_learning)
         rescaling_item_vector = rescale_vector_from_gradient_and_effort(gradient_item, enriched_oracle_claim.effort)
-        rescaling_iterable_vector = rescale_vector_from_gradient_and_effort(gradient_iterable,
-                                                                            enriched_oracle_claim.effort)
-        return rescaling_item_vector, rescaling_iterable_vector
+        rescaling_bag_vector = rescale_vector_from_gradient_and_effort(gradient_bag,
+                                                                       enriched_oracle_claim.effort)
+        return rescaling_item_vector, rescaling_bag_vector
 
-    def compute_item_and_iterable_gradients(self, enriched_oracle_claim, ratio_item_iterable_learning):
+    def compute_item_and_bag_gradients(self, enriched_oracle_claim, ratio_item_bag_learning):
         eoc = enriched_oracle_claim
-        r = ratio_item_iterable_learning
+        r = ratio_item_bag_learning
         matrix_of_coefficients = (((1. - eoc.current_distance) * eoc.argument1.norm / eoc.argument0.norm, -1.),
                                   (-1., (1. - eoc.current_distance) * eoc.argument0.norm / eoc.argument1.norm))
         vector_of_vectorizations = (eoc.argument0.vectorization, eoc.argument1.vectorization)
         gradient_item = non_trivial_hadamard_scalar_product(vector_of_vectorizations,
                                                             matrix_of_coefficients,
                                                             vector_of_vectorizations)
-        u0 = dot_matrix_dot_products(self.iterable_weights_vector, transpose_matrix(self.item_iterable_matrix),
+        u0 = dot_matrix_dot_products(self.bag_weights_vector, transpose_matrix(self.item_bag_matrix),
                                      self.item_weights_vector, eoc.argument0.vectorization)
-        u1 = dot_matrix_dot_products(self.iterable_weights_vector, transpose_matrix(self.item_iterable_matrix),
+        u1 = dot_matrix_dot_products(self.bag_weights_vector, transpose_matrix(self.item_bag_matrix),
                                      self.item_weights_vector, eoc.argument1.vectorization)
-        gradient_iterable = non_trivial_hadamard_scalar_product((eoc.argument0.vector, eoc.argument1.vector),
-                                                                matrix_of_coefficients,
-                                                                (u0, u1))
+        gradient_bag = non_trivial_hadamard_scalar_product((eoc.argument0.vector, eoc.argument1.vector),
+                                                           matrix_of_coefficients,
+                                                           (u0, u1))
         common_factor = (eoc.argument0.norm * eoc.argument1.norm * (eoc.target_distance - eoc.current_distance)
                          / (r ** 2 * norm_from_vector(gradient_item) ** 2
-                            + (1. - r) ** 2 * norm_from_vector(gradient_iterable) ** 2))
+                            + (1. - r) ** 2 * norm_from_vector(gradient_bag) ** 2))
         gradient_item *= common_factor * r
-        gradient_iterable *= common_factor * (1. - r)
-        return gradient_item, gradient_iterable
+        gradient_bag *= common_factor * (1. - r)
+        return gradient_item, gradient_bag
 
 
 class EnrichedOracleClaim(OracleClaim, MemoryArgumentsVectorsVectorizationsNorms):
 
     def __init__(self, oracle_claim, distance_object, effort=1.):
-        OracleClaim.__init__(self, oracle_claim.iterables_pair, oracle_claim.distance_interval)
+        OracleClaim.__init__(self, oracle_claim.pair_of_bag_collections, oracle_claim.distance_interval)
         MemoryArgumentsVectorsVectorizationsNorms.__init__(self)
         self.effort = effort
-        self.current_distance = distance_object(*self.iterables_pair, memory=self)
+        self.current_distance = distance_object(*self.pair_of_bag_collections, memory=self)
         self.target_distance = closest_point_from_interval(self.current_distance, self.distance_interval)
         self.target_distance = (self.current_distance + self.effort * (self.target_distance - self.current_distance))
 
