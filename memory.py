@@ -26,6 +26,7 @@ class MemoryVectorVectorizationNorm(MemoryVector, MemoryNorm):
     def __init__(self):
         MemoryVector.__init__(self)
         MemoryNorm.__init__(self)
+        self.vectorization = None
 
 
 class MemoryArgumentsVectorsVectorizationsNorms (MemoryArgumentsNorm):

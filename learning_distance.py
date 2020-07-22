@@ -11,7 +11,6 @@ from matrix_operations import *
 from distance import Distance
 from oracle_claim import OracleClaim
 
-
 DEFAULT_NUMBER_OF_ITERATIONS = 5
 
 
@@ -20,26 +19,23 @@ class LearningDistance(Distance):
     def __init__(self, bags, item_to_weight=None, bag_to_weight=None):
         super().__init__(bags, item_to_weight, bag_to_weight)
 
-    def learn(self, oracle_claims, ratio_item_bag_learning=0.5, convergence_speed=0.5,
+    def learn(self, oracle_claims, ratio_item_bag_learning=0.5, speed=0.5,
               number_of_iterations=DEFAULT_NUMBER_OF_ITERATIONS):
+        """ 'speed' is the fraction of the straight-line distance to the target
+        traversed in one gradient descent step. """
         oracle_claims = list(oracle_claims)
         for _ in range(number_of_iterations):
             random.shuffle(oracle_claims)
             for oracle_claim in oracle_claims:
-                self.learn_from_one_oracle_claim(oracle_claim,
-                                                 ratio_item_bag_learning=ratio_item_bag_learning,
-                                                 effort=convergence_speed)
+                self.apply_gradient_descent_step_for_one_oracle_claim(oracle_claim,
+                                                                      ratio_item_bag_learning=ratio_item_bag_learning,
+                                                                      speed=speed)
 
-    def learn_from_one_oracle_claim(self, oracle_claim, ratio_item_bag_learning=0.5, effort=1.):
-        """ 'effort' is a value between '0.' and '1.'. It represents the amplitude of the change applied to the weights
-        so that the distance conforms to 'oracle_claim'.
-        Let 't' denote the target distance between the two sets of bags from oracle_claim,
-        'c' their current distance, and 'd' the distance achieved after the update.
-        Then 'effort' is around '(t - d) / (t - c)'. """
-        enriched_oracle_claim = EnrichedOracleClaim(oracle_claim, self, effort=effort)
+    def apply_gradient_descent_step_for_one_oracle_claim(self, oracle_claim, ratio_item_bag_learning=0.5, speed=1.):
+        enriched_oracle_claim = EnrichedOracleClaim(oracle_claim, self, speed=speed)
         if enriched_oracle_claim.has_bad_values():
             return None
-        rescaling_item_vector, rescaling_bag_vector =\
+        rescaling_item_vector, rescaling_bag_vector = \
             self.compute_rescaling_vectors(enriched_oracle_claim, ratio_item_bag_learning)
         self.item_weights_vector = coefficient_wise_vector_product(rescaling_item_vector, self.item_weights_vector)
         self.bag_weights_vector = coefficient_wise_vector_product(rescaling_bag_vector,
@@ -48,44 +44,45 @@ class LearningDistance(Distance):
     def compute_rescaling_vectors(self, enriched_oracle_claim, ratio_item_bag_learning):
         gradient_item, gradient_bag = self.compute_item_and_bag_gradients(enriched_oracle_claim,
                                                                           ratio_item_bag_learning)
-        rescaling_item_vector = rescale_vector_from_gradient_and_effort(gradient_item, enriched_oracle_claim.effort)
-        rescaling_bag_vector = rescale_vector_from_gradient_and_effort(gradient_bag,
-                                                                       enriched_oracle_claim.effort)
+        rescaling_item_vector = rescale_vector_from_gradient_and_speed(gradient_item, enriched_oracle_claim.speed)
+        rescaling_bag_vector = rescale_vector_from_gradient_and_speed(gradient_bag, enriched_oracle_claim.speed)
         return rescaling_item_vector, rescaling_bag_vector
 
     def compute_item_and_bag_gradients(self, enriched_oracle_claim, ratio_item_bag_learning):
         eoc = enriched_oracle_claim
         r = ratio_item_bag_learning
-        matrix_of_coefficients = (((1. - eoc.current_distance) * eoc.argument1.norm / eoc.argument0.norm, -1.),
-                                  (-1., (1. - eoc.current_distance) * eoc.argument0.norm / eoc.argument1.norm))
-        vector_of_vectorizations = (eoc.argument0.vectorization, eoc.argument1.vectorization)
-        gradient_item = non_trivial_hadamard_scalar_product(vector_of_vectorizations,
-                                                            matrix_of_coefficients,
-                                                            vector_of_vectorizations)
-        u0 = dot_matrix_dot_products(self.bag_weights_vector, transpose_matrix(self.item_bag_matrix),
-                                     self.item_weights_vector, eoc.argument0.vectorization)
-        u1 = dot_matrix_dot_products(self.bag_weights_vector, transpose_matrix(self.item_bag_matrix),
-                                     self.item_weights_vector, eoc.argument1.vectorization)
-        gradient_bag = non_trivial_hadamard_scalar_product((eoc.argument0.vector, eoc.argument1.vector),
-                                                           matrix_of_coefficients,
-                                                           (u0, u1))
-        common_factor = (eoc.argument0.norm * eoc.argument1.norm * (eoc.target_distance - eoc.current_distance)
-                         / (r ** 2 * norm_from_vector(gradient_item) ** 2
-                            + (1. - r) ** 2 * norm_from_vector(gradient_bag) ** 2))
-        gradient_item *= common_factor * r
-        gradient_bag *= common_factor * (1. - r)
+        w0 = eoc.argument0.vectorization / eoc.argument0.norm
+        w1 = eoc.argument1.vectorization / eoc.argument1.norm
+        w01 = w0 - (1. - eoc.current_distance) * w1
+        w10 = w1 - (1. - eoc.current_distance) * w0
+        partial_gradient_item = coefficient_wise_vector_product(w01, w1) + coefficient_wise_vector_product(w10, w0)
+        partial_gradient_bag = (dot_dot_matrix_dot_products(eoc.argument1.vector,
+                                                            self.bag_weights_vector,
+                                                            transpose_matrix(self.item_bag_matrix),
+                                                            self.item_weights_vector,
+                                                            w01) / eoc.argument1.norm +
+                                dot_dot_matrix_dot_products(eoc.argument0.vector,
+                                                            self.bag_weights_vector,
+                                                            transpose_matrix(self.item_bag_matrix),
+                                                            self.item_weights_vector,
+                                                            w10) / eoc.argument0.norm)
+        common_factor = (eoc.current_distance - eoc.target_distance) / \
+                        (r ** 2 * norm_from_vector(partial_gradient_item) ** 2 +
+                         (1 - r) ** 2 * norm_from_vector(partial_gradient_bag) ** 2)
+        gradient_item = common_factor * r ** 2 * partial_gradient_item
+        gradient_bag = common_factor * (1 - r) ** 2 * partial_gradient_bag
         return gradient_item, gradient_bag
 
 
 class EnrichedOracleClaim(OracleClaim, MemoryArgumentsVectorsVectorizationsNorms):
 
-    def __init__(self, oracle_claim, distance_object, effort=1.):
+    def __init__(self, oracle_claim, distance_object, speed=1.):
         OracleClaim.__init__(self, oracle_claim.pair_of_bag_collections, oracle_claim.distance_interval)
         MemoryArgumentsVectorsVectorizationsNorms.__init__(self)
-        self.effort = effort
+        self.speed = speed
         self.current_distance = distance_object(*self.pair_of_bag_collections, memory=self)
         self.target_distance = closest_point_from_interval(self.current_distance, self.distance_interval)
-        self.target_distance = (self.current_distance + self.effort * (self.target_distance - self.current_distance))
+        self.target_distance = (self.current_distance + self.speed * (self.target_distance - self.current_distance))
 
     def has_bad_values(self):
         return (math.isclose(self.current_distance, self.target_distance)
@@ -101,19 +98,15 @@ def closest_point_from_interval(value, interval):
     return value
 
 
-def rescale_vector_from_gradient_and_effort(gradient, effort):
-    gradient = rescale_vector_to_satisfy_lower_negative_bound(gradient, -1. * effort)
+def rescale_vector_from_gradient_and_speed(gradient, speed):
+    gradient = rescale_vector_to_satisfy_lower_negative_bound(gradient, -1. * speed)
     one_vector = one_vector_from_length(len(gradient))
     return one_vector + gradient
 
 
-def non_trivial_hadamard_scalar_product(left_vectors, matrix, right_vectors):
-    """
-    :param left_vectors: a vector of n vectors
-    :param matrix: an n by m matrix of scalars
-    :param right_vectors: a vector of m vectors
-    :return: transpose(left_vector) * matrix * right_vector,
-             where the product of vectors is coefficient_wise_vector_product.
-    """
-    return sum(matrix[i][j] * coefficient_wise_vector_product(left_vectors[i], right_vectors[j])
-               for i in range(len(left_vectors)) for j in range(len(right_vectors)))
+def dot_dot_matrix_dot_products(v0, v1, m, v2, v3):
+    v23 = coefficient_wise_vector_product(v2, v3)
+    mv23 = m * v23
+    v01 = coefficient_wise_vector_product(v0, v1)
+    v01mv23 = coefficient_wise_vector_product(v01, mv23)
+    return v01mv23

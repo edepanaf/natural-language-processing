@@ -121,3 +121,8 @@ def are_almost_colinear_vectors(vector0, vector1):
     for index in range(len(vector0)):
         if vector0[index] != 0.:
             return are_almost_equal_vectors(vector0 / vector0[index] * vector1[index], vector1)
+
+
+def is_almost_zero_vector(vector):
+    zero_vector = zero_vector_from_length(len(vector))
+    return are_almost_equal_vectors(vector, zero_vector)
