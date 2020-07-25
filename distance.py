@@ -30,6 +30,11 @@ class Distance(VectorSpace):
         memory.argument1.vectorization = self.vectorize(bags1, memory=memory.argument1)
         return cosine_distance(memory.argument0.vectorization, memory.argument1.vectorization, memory=memory)
 
+    def jensen_shannon_distance(self, bags0, bags1):
+        vectorization0 = self.vectorize(bags0)
+        vectorization1 = self.vectorize(bags1)
+        return jensen_shannon_distance(vectorization0, vectorization1)
+
     def vectorize(self, bags, memory=MemoryVector()):
         memory.vector = self.bag_vector_from_collection(bags)
         return dot_matrix_dot_products(self.item_weights_vector, self.item_bag_matrix,
