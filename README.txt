@@ -209,6 +209,19 @@ Also define the class 'EnrichedOracleClaim', used to avoid
 duplicate computations during the treatment of an oracle claim.
 
 
+--- information_theory.py ---
+
+The Jensen-Shannon divergence between two distributions X, Y on the same set is defined as follows.
+Consider a random Boolean B and a variable Z equal to X if B is zero, Y otherwise.
+The Jensen-Shannon divergence is then defined as the mutual information between B and Z.
+Its square root is a metric distance.
+
+This file defines the function 'get_jensen_shannon_distance_and_variance'
+that inputs two lists of equal length of nonnegative floats summing to 1.
+and returns their jensen-shannon distance as well as the associated variance
+(variance of the corresponding mutual information).
+
+
 --- memory.py ---
 
 Define various classes to store intermediate computations

@@ -48,7 +48,8 @@ class TestMatrixOperations(unittest.TestCase):
         v = create_vector([2., -1., 0.5])
         zero_vector = create_vector([0., 0., 0.])
         self.assertAlmostEqual(cosine_distance(zero_vector, u), 1.)
-        self.assertAlmostEqual(cosine_distance(u, v), 1. - scalar_product(u, v) / norm_from_vector(u) / norm_from_vector(v))
+        expected = 1. - scalar_product(u, v) / norm_from_vector(u) / norm_from_vector(v)
+        self.assertAlmostEqual(cosine_distance(u, v), expected)
 
     def test_scale_vector_to_satisfy_lower_bound(self):
         vector = create_vector([6, 2, 4, 8])
@@ -56,6 +57,12 @@ class TestMatrixOperations(unittest.TestCase):
         vector = create_vector([6, -2, 4, 8])
         self.assertTrue(are_equal_vectors(rescale_vector_to_satisfy_lower_negative_bound(vector, -1),
                                           create_vector([3, -1, 2, 4])))
+
+    def test_has_nonnegative_coefficients(self):
+        vector = create_vector([0.1, 0.3, 0.4, 0.])
+        self.assertTrue(contains_only_nonnegative_coefficients(vector))
+        vector = create_vector([0.3, -0.1, 0.5, 0.])
+        self.assertFalse(contains_only_nonnegative_coefficients(vector))
 
 
 if __name__ == '__main__':

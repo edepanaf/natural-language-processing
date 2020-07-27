@@ -8,6 +8,7 @@
 
 from matrix_operations import *
 from vector_space import VectorSpace
+from information_theory import get_jensen_shannon_distance_and_variance
 
 
 class Distance(VectorSpace):
@@ -30,10 +31,12 @@ class Distance(VectorSpace):
         memory.argument1.vectorization = self.vectorize(bags1, memory=memory.argument1)
         return cosine_distance(memory.argument0.vectorization, memory.argument1.vectorization, memory=memory)
 
-    def jensen_shannon_distance(self, bags0, bags1):
+    def get_jensen_shannon_distance_and_variance(self, bags0, bags1):
         vectorization0 = self.vectorize(bags0)
         vectorization1 = self.vectorize(bags1)
-        return jensen_shannon_distance(vectorization0, vectorization1)
+        probabilities0 = probabilities_from_vector(vectorization0)
+        probabilities1 = probabilities_from_vector(vectorization1)
+        return get_jensen_shannon_distance_and_variance(probabilities0, probabilities1)
 
     def vectorize(self, bags, memory=MemoryVector()):
         memory.vector = self.bag_vector_from_collection(bags)
@@ -56,7 +59,7 @@ class Distance(VectorSpace):
 
     def tfidf_item_weights(self):
         number_of_bags = len(self.bag_to_index)
-        # We use log_of_ratio_zero_if_null_denominator to handle the case
+        # Use of log_of_ratio_zero_if_null_denominator to handle the case
         # where the only bag containing an item has been removed (operation currently not supported).
         return {item: log_of_ratio_zero_if_null_denominator(number_of_bags, self.count_bags_containing_item(item))
                 for item in self.item_to_index}
@@ -71,3 +74,10 @@ def log_of_ratio_zero_if_null_denominator(numerator, denominator):
 def normalize_distribution(distribution):
     normalization_factor = sum(distribution.values())
     return {item: value / normalization_factor for item, value in distribution.items()}
+
+
+def probabilities_from_vector(vector):
+    sum_vector = sum(vector)
+    if sum_vector == 0.:
+        raise ValueError
+    return vector / sum_vector

@@ -17,8 +17,9 @@ coin_probabilities = [0.5, 0.5]
 class TestInformationTheory(unittest.TestCase):
 
     def test_get_jensen_shannon_distance(self):
-        probabilities0 = probabilities_from_list(random_list_from_length(5))
-        probabilities1 = probabilities_from_list(random_list_from_length(5))
+        length = 5
+        probabilities0 = random_probabilities_from_length(length)
+        probabilities1 = random_probabilities_from_length(length)
         distance, _ = get_jensen_shannon_distance_and_variance(probabilities0, probabilities1)
         mixture = mixture_from_probabilities(probabilities0, probabilities1)
         entropy0 = entropy_from_probabilities(probabilities0)
@@ -35,15 +36,10 @@ class TestInformationTheory(unittest.TestCase):
         self.assertAlmostEqual(information_from_probability(0.5), 1.)
         self.assertAlmostEqual(information_from_probability(0.), 0.)
 
-    def test_probabilities_from_list(self):
-        my_list = random_list_from_length(2)
-        probabilities = probabilities_from_list(my_list)
-        self.assertAlmostEqual(sum(probabilities), 1.)
-        self.assertAlmostEqual(my_list[0] / sum(my_list), probabilities[0])
-
     def test_entropy_from_probabilities(self):
         self.assertAlmostEqual(entropy_from_probabilities(coin_probabilities), 1.)
-        probabilities0 = probabilities_from_list(random_list_from_length(4))
+        length = 5
+        probabilities0 = random_probabilities_from_length(length)
         probabilities1 = probabilities0 + [0.]
         self.assertAlmostEqual(entropy_from_probabilities(probabilities0), entropy_from_probabilities(probabilities1))
 
@@ -59,3 +55,19 @@ if __name__ == '__main__':
 
 def random_list_from_length(length):
     return [random.random() for _ in range(length)]
+
+
+def probabilities_from_list(my_list):
+    sum_list = sum(my_list)
+    if sum_list == 0.:
+        raise ValueError
+    return [value / sum_list for value in my_list]
+
+
+def random_probabilities_from_length(length):
+    if length == 0:
+        raise ValueError
+    my_list = random_list_from_length(length)
+    while sum(my_list) == 0.:
+        my_list = random_list_from_length(length)
+    return probabilities_from_list(my_list)

@@ -126,3 +126,7 @@ def are_almost_colinear_vectors(vector0, vector1):
 def is_almost_zero_vector(vector):
     zero_vector = zero_vector_from_length(len(vector))
     return are_almost_equal_vectors(vector, zero_vector)
+
+
+def contains_only_nonnegative_coefficients(vector):
+    return (vector >= 0.).all()

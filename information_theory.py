@@ -9,9 +9,7 @@
 import math
 
 
-def get_jensen_shannon_distance_and_variance(vector0, vector1):
-    probabilities0 = probabilities_from_list(vector0)
-    probabilities1 = probabilities_from_list(vector1)
+def get_jensen_shannon_distance_and_variance(probabilities0, probabilities1):
     distribution = get_jensen_shannon_distribution(probabilities0, probabilities1)
     distance = math.sqrt(distribution.get_mean())
     variance = distribution.get_variance()
@@ -36,13 +34,6 @@ def information_from_probability(p):
     if p == 0.:
         return 0.
     return - math.log(p, 2)
-
-
-def probabilities_from_list(my_list):
-    sum_list = sum(my_list)
-    if sum_list == 0.:
-        raise ValueError
-    return [value / sum_list for value in my_list]
 
 
 class Distribution:
