@@ -36,7 +36,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_get_jensen_shannon_distance_and_variance(self):
         distance, variance = distance_object.get_jensen_shannon_distance_and_variance(bags0, bags1)
-        self.assertTrue(distance > 0.)
+        self.assertTrue(0. < distance < 1.)
         self.assertTrue(variance > 0.)
 
 
