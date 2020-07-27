@@ -10,10 +10,10 @@ import unittest
 from vector_space import *
 
 
-iterables = ['banana', 'ananas', 'base']
-vector_space = VectorSpace(iterables)
+bags = ['banana', 'ananas', 'base']
+vector_space = VectorSpace(bags)
 # item_to_index = {'b': 4, 'a': 3, 'n': 2, 's': 1, 'e': 0}
-# iterable_to_index = {'banana': 1, 'ananas': 2, 'base': 0}
+# bag_to_index = {'banana': 1, 'ananas': 2, 'base': 0}
 # matrix = csc_matrix([[0, 0, 1],
 #                      [0, 1, 1],
 #                      [2, 2, 0],
@@ -23,13 +23,13 @@ vector_space = VectorSpace(iterables)
 
 class TestVectorSpace(unittest.TestCase):
 
-    def test_map_to_index_from_iterable(self):
-        iterable = 'abacbde'
-        computed = map_to_index_from_bag(iterable)
-        computed_list = ['' for _ in range(len(iterable))]
+    def test_map_to_index_from_bag(self):
+        bag = 'abacbde'
+        computed = map_to_index_from_bag(bag)
+        computed_list = ['' for _ in range(len(bag))]
         for item, index in computed.items():
             computed_list[index] = item
-        for letter in iterable:
+        for letter in bag:
             self.assertIn(letter, computed_list)
 
     def test_iterables_union(self):
@@ -40,7 +40,7 @@ class TestVectorSpace(unittest.TestCase):
             computed_string += letter
         self.assertEqual(computed_string, 'abcdef')
 
-    def test_count_iterables_containing_item(self):
+    def test_count_bags_containing_item(self):
         self.assertEqual(vector_space.count_bags_containing_item('a'), 3)
         self.assertEqual(vector_space.count_bags_containing_item('b'), 2)
         self.assertEqual(vector_space.count_bags_containing_item('n'), 2)

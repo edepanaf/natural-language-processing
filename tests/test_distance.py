@@ -9,19 +9,19 @@
 import unittest
 from distance import *
 
-iterables = ['aa', 'ab', 'bbb']
+bags = ['aa', 'ab', 'bbb']
 item_to_weight = {'a': 1, 'b': 2}
-iterable_to_weight = {'aa': 1, 'ab': 2, 'bbb': 3}
-distance = Distance(iterables, item_to_weight, iterable_to_weight)
-iterables0 = {'ab'}
-iterables1 = {'bbb'}
+bag_to_weight = {'aa': 1, 'ab': 2, 'bbb': 3}
+distance = Distance(bags, item_to_weight, bag_to_weight)
+bags0 = {'ab'}
+bags1 = {'bbb'}
 
 
 class MyTestCase(unittest.TestCase):
 
     def test_vectorize(self):
-        vector0 = distance.vectorize(iterables0)
-        vector1 = distance.vectorize(iterables1)
+        vector0 = distance.vectorize(bags0)
+        vector1 = distance.vectorize(bags1)
         self.assertTrue(are_almost_colinear_vectors(vector0, create_vector([2, 4])) or
                         are_almost_colinear_vectors(vector0, create_vector([4, 2])))
         self.assertTrue(are_almost_colinear_vectors(vector1, create_vector([0, 18])) or
@@ -29,23 +29,14 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(are_almost_colinear_vectors(vector0 + vector1, distance.vectorize({'ab', 'bbb'})))
 
     def test_tfidf(self):
-        tfidf_distance = Distance(iterables)
+        tfidf_distance = Distance(bags)
         expected_item_weights_vector = create_vector([math.log(3/2), math.log(3/2)])
         expected_item_weights_vector /= sum(expected_item_weights_vector)
         self.assertTrue(are_equal_vectors(tfidf_distance.item_weights_vector, expected_item_weights_vector))
 
-    """def test_verbose_distance(self):
-        d, iv0, vz0, n0, iv1, vz1, n1 = distance.verbose_distance(iterables0, iterables1)
-        self.assertAlmostEqual(d, 1. - scalar_product(vz0, vz1) / n0 / n1)
-        self.assertTrue(are_equal_vectors(dot_matrix_dot_products(distance.item_weights_vector,
-                                                                  distance.item_iterable_matrix,
-                                                                  distance.iterable_weights_vector, iv0),
-                                          vz0))
-        self.assertTrue(are_equal_vectors(dot_matrix_dot_products(distance.item_weights_vector,
-                                                                  distance.item_iterable_matrix,
-                                                                  distance.iterable_weights_vector, iv1),
-                                          vz1))"""
-
+    def test_get_jensen_shannon_distance_and_variance(self):
+        #get_jensen_shannon_distance_and_variance()
+        pass
 
 if __name__ == '__main__':
     unittest.main()
