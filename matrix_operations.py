@@ -6,11 +6,9 @@
 # Author: Élie de Panafieu  <elie.de_panafieu@nokia-bell-labs.com>
 
 
-import math
 import numpy as np
 from scipy.sparse.csr import csr_matrix
 from scipy.sparse import lil_matrix
-from memory import *
 
 
 def matrix_from_bags_and_index_maps(bags, item_to_index: dict, bag_to_index: dict) -> csr_matrix:
@@ -26,7 +24,9 @@ def vector_from_index_and_value_maps(to_index: dict, to_value, length=None):
         length = len(to_index)
     vector = zero_vector_from_length(length)
     for key, value in to_value.items():
-        vector[to_index[key]] = value
+        index = to_index.get(key, None)
+        if index is not None:
+            vector[to_index[key]] = value
     return vector
 
 
@@ -39,21 +39,15 @@ def count_nonzero_entries_in_matrix_row(matrix, row_index):
     return row.getnnz()
 
 
-def cosine_distance(vector0, vector1, memory=MemoryArgumentsNorm()):
-    vector0 = normalize(vector0, memory.argument0)
-    vector1 = normalize(vector1, memory.argument1)
-    return 1. - scalar_product(vector0, vector1)
-
-
 def scalar_product(vector0, vector1):
     return np.dot(vector0, vector1)
 
 
-def normalize(vector, memory=MemoryNorm()):
-    memory.norm = norm_from_vector(vector)
-    if memory.norm == 0.:
+def normalize(vector):
+    norm = norm_from_vector(vector)
+    if norm == 0.:
         return vector
-    return vector / memory.norm
+    return vector / norm
 
 
 def is_zero_vector(vector):
@@ -61,7 +55,7 @@ def is_zero_vector(vector):
 
 
 def norm_from_vector(vector):
-    return math.sqrt(scalar_product(vector, vector))
+    return np.sqrt(scalar_product(vector, vector))
 
 
 def coefficient_wise_vector_product(vector0: np.ndarray, vector1: np.ndarray) -> np.ndarray:
@@ -90,15 +84,15 @@ def one_vector_from_length(length: int) -> np.ndarray:
 def rescale_vector_to_satisfy_lower_negative_bound(vector, lower_bound):
     min_element = min(vector)
     if min_element < lower_bound:
-        vector = lower_bound / min_element * vector
+        return lower_bound / min_element * vector
     return vector
 
 
-def transpose_matrix(matrix):
+def transpose_from_matrix(matrix):
     return matrix.transpose()
 
 
-def create_vector(coefficients):
+def make_vector(coefficients):
     return np.array(coefficients)
 
 
@@ -109,10 +103,7 @@ def are_equal_vectors(vector0, vector1):
 def are_almost_equal_vectors(vector0, vector1):
     if len(vector0) != len(vector1):
         return False
-    for index in range(len(vector0)):
-        if not math.isclose(vector0[index], vector1[index]):
-            return False
-    return True
+    return np.isclose(vector0, vector1).all()
 
 
 def are_almost_colinear_vectors(vector0, vector1):
@@ -128,5 +119,28 @@ def is_almost_zero_vector(vector):
     return are_almost_equal_vectors(vector, zero_vector)
 
 
+def has_nonnegative_coefficients(vector):
+    return (vector >= 0.).all()
+
+
 def contains_only_nonnegative_coefficients(vector):
     return (vector >= 0.).all()
+
+
+def probabilities_from_vector(vector):
+    sum_vector = sum(vector)
+    if sum_vector == 0.:
+        raise ValueError
+    return vector / sum_vector
+
+
+def information_log_from_vector(vector):
+    return np.log2(vector, out=np.zeros_like(vector), where=(vector != 0))
+
+
+def power_from_vector(vector, power):
+    return vector ** power
+
+
+def concatenate_vectors(vector0, vector1):
+    return np.hstack((vector0, vector1))

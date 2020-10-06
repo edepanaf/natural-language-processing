@@ -7,7 +7,7 @@
 
 
 import unittest
-from vector_space import *
+from vectorization_of_bag_collections.vector_space import *
 
 
 bags = ['banana', 'ananas', 'base']
@@ -23,22 +23,10 @@ vector_space = VectorSpace(bags)
 
 class TestVectorSpace(unittest.TestCase):
 
-    def test_map_to_index_from_bag(self):
-        bag = 'abacbde'
-        computed = map_to_index_from_bag(bag)
-        computed_list = ['' for _ in range(len(bag))]
-        for item, index in computed.items():
-            computed_list[index] = item
-        for letter in bag:
-            self.assertIn(letter, computed_list)
-
-    def test_iterables_union(self):
-        string_list = ['', 'abc', 'de', '', 'f', '']
-        computed = iterables_union(string_list)
-        computed_string = ''
-        for letter in computed:
-            computed_string += letter
-        self.assertEqual(computed_string, 'abcdef')
+    def test_vector_length(self):
+        vector = vector_space.bag_vector_from_collection(['ananas', 'banana'])
+        projection = matrix_vector_product(vector_space.item_bag_matrix, vector)
+        self.assertEqual(len(projection), len(vector_space.item_to_index))
 
     def test_count_bags_containing_item(self):
         self.assertEqual(vector_space.count_bags_containing_item('a'), 3)
@@ -47,10 +35,28 @@ class TestVectorSpace(unittest.TestCase):
         self.assertEqual(vector_space.count_bags_containing_item('e'), 1)
         self.assertEqual(vector_space.count_bags_containing_item('f'), 0)
 
-    def test_vector_length(self):
-        vector = vector_space.bag_vector_from_collection(['ananas', 'banana'])
-        projection = matrix_vector_product(vector_space.item_bag_matrix, vector)
-        self.assertEqual(len(projection), len(vector_space.item_to_index))
+    def test_map_to_index_from_iterable(self):
+        bag = 'abacbde'
+        computed = map_to_index_from_iterable(bag)
+        computed_list = ['' for _ in range(len(bag))]
+        for item, index in computed.items():
+            computed_list[index] = item
+        for letter in bag:
+            self.assertIn(letter, computed_list)
+
+    def test_union_from_iterables(self):
+        string_list = ['', 'abc', 'de', '', 'f', '']
+        computed = union_from_iterables(string_list)
+        computed_string = ''
+        for letter in computed:
+            computed_string += letter
+        self.assertEqual(computed_string, 'abcdef')
+
+    def test_constant_distribution_from_collection(self):
+        collection = {1, 2, 3}
+        expected_distribution = {1:1., 2:1., 3:1.}
+        computed_distribution = weight_one_dict_from_collection(collection)
+        self.assertEqual(expected_distribution, computed_distribution)
 
 
 if __name__ == '__main__':

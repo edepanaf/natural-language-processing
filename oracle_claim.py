@@ -8,6 +8,6 @@
 
 class OracleClaim:
 
-    def __init__(self, pair_of_bag_collections, distance_interval):
-        self.pair_of_bag_collections = pair_of_bag_collections
+    def __init__(self, pair_of_bags, distance_interval):
+        self.pair_of_bags = pair_of_bags
         self.distance_interval = distance_interval

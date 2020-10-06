@@ -69,7 +69,7 @@ bag_weights = {bag0: 4.5, bag1: 1., bag2: 3., bag3: 2.5}
 
 # Define the LearningDistance object.
 
-learning_distance = LearningDistance(all_bags, item_to_weight=item_weights, bag_to_weight=bag_weights)
+learning_distance = LearningDistance(all_bags, weight_from_item=item_weights, weight_from_bag=bag_weights)
 
 # If the 'item_weights' and / or 'bag_weights' are omitted,
 # default weights will be computed using the tf-idf heuristic.
@@ -173,11 +173,11 @@ Provide the methods
 Define the class 'Distance'. Objects of this class are callable.
 They input pairs of collections of bags and output their distance.
 Provide the methods
-    __init__(self, bags, item_to_weight=None, bag_to_weight=None)
+    __init__(self, bags, weight_from_item=None, weight_from_bag=None)
     def __call__(self, bags0, bags1)
-    vectorize(self, bags)
-    set_item_weights(self, item_to_weight)
-    set_bag_weights(self, bag_to_weight)
+    __call__(self, bags)
+    set_item_weights(self, weight_from_item)
+    set_bag_weights(self, weight_from_bag)
     get_item_weights(self)
     get_bag_weights(self)
     tfidf_item_weights(self)
@@ -198,7 +198,7 @@ Provide the method
 Define the class 'LearningDistance', which inherits from 'Distance'.
 Add the functionality to learn from 'OracleClaim' objects.
 Provide the methods
-    __init__(self, bags, item_to_weight=None, bag_to_weight=None)
+    __init__(self, bags, weight_from_item=None, weight_from_bag=None)
     learn(self, oracle_claims, ratio_item_bag_learning=0.5, convergence_speed=0.5,
           number_of_iterations=DEFAULT_NUMBER_OF_ITERATIONS)
     learning_loop_on_oracle_claims(self, oracle_claims, ratio_item_bag_learning=0.5, effort=1.)
