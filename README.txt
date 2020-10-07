@@ -10,6 +10,22 @@
 
 ============ Summary ============
 
+This Python package provides a class 'FittingDistance' which implements a distance on sets of bags of items
+(i.e. collections of collections of items), able to evolve to fit examples.
+Its main application is expected to be on Natural Language Processing.
+In that case, the bags are texts and items might be factors (another popular choice is lemmatized words).
+We provide a specialized class 'FittingDistanceOnTextCollections' for this case.
+
+
+============ Fitting distance on text collections ============
+
+
+from 
+
+
+
+============ Summary ============
+
 
 This Python package provides a distance on collections of bags of items
 that is able to evolve when true distance instances are provided.
